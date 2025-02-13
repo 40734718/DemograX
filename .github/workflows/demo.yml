@@ -1,0 +1,42 @@
+name: DemograX .NET Core Build and Test
+
+on:
+  push:
+    branches:
+      - main  # Trigger workflow on pushes to the main branch
+  pull_request:
+    branches:
+      - main  # Trigger workflow on pull requests to the main branch
+
+jobs:
+  build:
+    runs-on: windows-latest  # Use Windows runner for Visual Studio projects
+
+    steps:
+    # Step 1: Checkout the repository code
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    # Step 2: Set up .NET SDK (ensure it's compatible with the project)
+    - name: Set up .NET SDK
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: '6.0'  # Change to match the .NET version used in the project
+
+    # Step 3: Restore dependencies (NuGet packages)
+    - name: Restore dependencies
+      run: dotnet restore
+
+    # Step 4: Build the project (use the Release configuration)
+    - name: Build the project
+      run: dotnet build --configuration Release
+
+    # Step 5: Run unit tests to ensure data processing works correctly
+    - name: Run tests
+      run: dotnet test --configuration Release --no-restore
+
+    # Step 6: Publish the project (to output directory, optional for deployment)
+    - name: Publish the project
+      run: |
+        dotnet publish --configuration Release --output ./publish
+        # Add deployment steps if needed for Azure, AWS, etc.
