@@ -3,10 +3,10 @@ name: DemograX .NET Core Build and Test
 on:
   push:
     branches:
-      - main  # Trigger workflow on pushes to the main branch
+      - main
   pull_request:
     branches:
-      - main  # Trigger workflow on pull requests to the main branch
+      - main
 
 jobs:
   build:
@@ -23,20 +23,19 @@ jobs:
       with:
         dotnet-version: '6.0'  # Change to match the .NET version used in the project
 
-    # Step 3: Restore dependencies (NuGet packages)
+    # Step 3: Restore dependencies (NuGet packages) using the correct path to the .csproj file
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore src/DemograX/DemograX.csproj
 
-    # Step 4: Build the project (use the Release configuration)
+    # Step 4: Build the project (use the correct path to the .csproj file)
     - name: Build the project
-      run: dotnet build --configuration Release
+      run: dotnet build src/DemograX/DemograX.csproj --configuration Release
 
-    # Step 5: Run unit tests to ensure data processing works correctly
+    # Step 5: Run unit tests (again, use the correct path to the .csproj file)
     - name: Run tests
-      run: dotnet test --configuration Release --no-restore
+      run: dotnet test src/DemograX/DemograX.csproj --configuration Release --no-restore
 
-    # Step 6: Publish the project (to output directory, optional for deployment)
+    # Step 6: Publish the project (optional step)
     - name: Publish the project
       run: |
-        dotnet publish --configuration Release --output ./publish
-        # Add deployment steps if needed for Azure, AWS, etc.
+        dotnet publish src/DemograX/DemograX.csproj --configuration Release --output ./publish
