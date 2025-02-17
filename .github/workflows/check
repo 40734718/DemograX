@@ -1,0 +1,36 @@
+name: Demograx CI Workflow
+
+on:
+  push:
+    branches:
+      - main  # Trigger on pushes to the main branch
+  pull_request:
+    branches:
+      - main  # Trigger on pull requests targeting the main branch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest  # Use the latest Ubuntu image
+
+    steps:
+    # Step 1: Check out the code
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    # Step 2: Set up .NET (or any other language/environment you need)
+    - name: Set up .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '5.0'  # Specify the version you are using
+
+    # Step 3: Restore dependencies (for .NET projects)
+    - name: Restore dependencies
+      run: dotnet restore
+
+    # Step 4: Build the project
+    - name: Build the project
+      run: dotnet build
+
+    # Step 5: Run tests (for .NET projects)
+    - name: Run tests
+      run: dotnet test
