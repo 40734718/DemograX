@@ -1,0 +1,53 @@
+name: Node.js CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Checkout the repository code
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    # Set up Node.js
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'  # Make sure the version matches your project
+
+    # Cache dependencies for faster installs (optional but recommended)
+    - name: Cache npm dependencies
+      uses: actions/cache@v2
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+
+    # Install dependencies
+    - name: Install dependencies
+      run: npm install
+
+    # Check for any issues with installed dependencies
+    - name: Check installed dependencies
+      run: npm ls
+
+    # Run tests
+    - name: Run tests
+      run: npm test
+      continue-on-error: false  # Make sure failure stops the workflow
+
+    # Display logs if needed for debugging
+    - name: Show test results (debugging step)
+      if: failure()
+      run: |
+        echo "Test logs:"
+        cat /home/runner/work/your-repo-name/your-repo-name/test-results.log  # Adjust the path based on your setup
