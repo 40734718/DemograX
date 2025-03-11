@@ -1,1 +1,4 @@
-
+git checkout develop
+git merge feature/new-authentication-system
+git branch -d feature/new-authentication-system
+git push origin --delete feature/new-authentication-system
