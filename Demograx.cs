@@ -10,7 +10,7 @@ namespace DemograxExecutable
             Console.BackgroundColor = ConsoleColor.DarkRed;
             Console.ForegroundColor = ConsoleColor.Black;
 
-
+            
             Console.Clear();
 
 
