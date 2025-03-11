@@ -1,3 +1,5 @@
 git checkout develop
 git pull origin develop
 git checkout -b feature/new-authentication-system
+git add .
+git commit -m "Added login form UI"
