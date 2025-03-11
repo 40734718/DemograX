@@ -12,7 +12,7 @@ As the Scrum Master, Talha is responsible for:
 -   Creating an environment of continuous improvement.
 -   Supporting the Product Owner and ensuring a smooth flow of communication.
 
-**Product Owner - Raza**  
+**Product Owner - Raza** 
 As the Product Owner, Raza is responsible for:
 
 -   Managing the product backlog and ensuring its alignment with the project's goals.
