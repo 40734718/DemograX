@@ -1,0 +1,258 @@
+using MySql.Data.MySqlClient;
+using System;
+using System.Collections.Generic;
+using System.Windows.Forms;
+
+namespace PopulationReportSystem
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            // Display the welcome message and report options
+            Console.WriteLine("Welcome to the Population Report System.");
+            Console.WriteLine("Select a report option:");
+
+            // Display different report choices
+            Console.WriteLine("1. Top N Populated Countries");
+            Console.WriteLine("2. Top N Populated Cities");
+            Console.WriteLine("3. Population Breakdown by Continent/Region/Country");
+            Console.WriteLine("4. Language Speaker's Statistics");
+
+            // Prompt user for input to select a report
+            Console.WriteLine("Enter your choice (1-4):");
+            int choice = Convert.ToInt32(Console.ReadLine());
+
+            // Based on the user's choice, call the appropriate method
+            switch (choice)
+            {
+                case 1:
+                    GenerateTopNPopulatedCountriesReport(); // Call the function to generate top N populated countries report
+                    break;
+                case 2:
+                    GenerateTopNPopulatedCitiesReport(); // Call the function to generate top N populated cities report
+                    break;
+                case 3:
+                    GeneratePopulationBreakdownReport(); // Call the function to generate population breakdown report
+                    break;
+                case 4:
+                    GetLanguageStatistics(); // Call the function to get language speaker statistics
+                    break;
+                default:
+                    Console.WriteLine("Invalid choice."); // If the user selects an invalid option, show an error message
+                    break;
+            }
+        }
+
+        // Database connection class to handle MySQL connections
+        class DatabaseHelper
+        {
+            // MySQL connection string (make sure to update credentials as needed)
+            private static string connectionString = "Server=localhost;userid=root;password=;database=world;charSet=utf8;";
+
+            // This method will return a new MySqlConnection object
+            public static MySqlConnection GetConnection()
+            {
+                return new MySqlConnection(connectionString);
+            }
+
+            public static bool RunCommand(string commandText) // for insert, update, delete commands
+            {
+                MySqlCommand command = new MySqlCommand(commandText, GetConnection());
+                try
+                {
+                    GetConnection().Open();
+                    command.ExecuteNonQuery();
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message, "Error While Command Execution!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return false;
+                }
+                finally
+                {
+                    GetConnection().Close();
+                }
+            }
+        }
+
+        // Country class for storing country data that will be retrieved from the database
+        public class Country
+        {
+            public string Code { get; set; } // Country code (e.g., "USA")
+            public string Name { get; set; } // Country name (e.g., "United States")
+            public string Continent { get; set; } // Continent of the country
+            public string Region { get; set; } // Region of the country
+            public long Population { get; set; } // Population of the country
+            public string Capital { get; set; } // Capital city of the country
+        }
+
+        // City class for storing city data that will be retrieved from the database
+        public class City
+        {
+            public string Name { get; set; } // City name (e.g., "New York")
+            public string Country { get; set; } // Country of the city
+            public string District { get; set; } // District or state of the city
+            public long Population { get; set; } // Population of the city
+        }
+
+        // Fetches the top N populated countries from the database
+        public static List<Country> GetTopNPopulatedCountries(int N)
+        {
+            // List to store the result of the query
+            List<Country> countries = new List<Country>();
+
+            // Create a new database connection
+            using (var connection = DatabaseHelper.GetConnection())
+            {
+                connection.Open(); // Open the connection to the database
+
+                // SQL query to get the top N countries based on population
+                string query = $"SELECT Code, Name, Continent, Region, Population, Capital FROM country ORDER BY Population DESC LIMIT {N}";
+
+                // Execute the query
+                MySqlCommand command = new MySqlCommand(query, connection);
+                MySqlDataReader reader = command.ExecuteReader();
+
+                // Read through the results and add them to the countries list
+                while (reader.Read())
+                {
+                    countries.Add(new Country
+                    {
+                        Code = reader["Code"].ToString(), // Get the country code
+                        Name = reader["Name"].ToString(), // Get the country name
+                        Continent = reader["Continent"].ToString(), // Get the continent
+                        Region = reader["Region"].ToString(), // Get the region
+                        Population = Convert.ToInt64(reader["Population"]), // Get the population
+                        Capital = reader["Capital"].ToString() // Get the capital city
+                    });
+                }
+            }
+
+            return countries; // Return the list of top N populated countries
+        }
+
+        // Fetches the top N populated cities from the database
+        public static List<City> GetTopNPopulatedCities(int N)
+        {
+            // List to store the result of the query
+            List<City> cities = new List<City>();
+
+            // Create a new database connection
+            using (var connection = DatabaseHelper.GetConnection())
+            {
+                connection.Open(); // Open the connection to the database
+
+                // SQL query to get the top N cities based on population
+                string query = $"SELECT Name, CountryCode, District, Population FROM city ORDER BY Population DESC LIMIT {N}";
+
+                // Execute the query
+                MySqlCommand command = new MySqlCommand(query, connection);
+                MySqlDataReader reader = command.ExecuteReader();
+
+                // Read through the results and add them to the cities list
+                while (reader.Read())
+                {
+                    cities.Add(new City
+                    {
+                        Name = reader["Name"].ToString(), // Get the city name
+                        Country = reader["CountryCode"].ToString(), // Get the country of the city
+                        District = reader["District"].ToString(), // Get the district or state
+                        Population = Convert.ToInt64(reader["Population"]) // Get the population of the city
+                    });
+                }
+            }
+
+            return cities; // Return the list of top N populated cities
+        }
+
+        // Generates a report based on population breakdown by continent/region/country
+        public static void GeneratePopulationBreakdownReport()
+        {
+            // Ask the user for a continent, region, or country name
+            Console.WriteLine("Enter Continent, Region, or Country name:");
+            string regionOrCountry = Console.ReadLine();
+
+            // Create a new database connection
+            using (var connection = DatabaseHelper.GetConnection())
+            {
+                connection.Open(); // Open the connection to the database
+
+                // SQL query to get countries based on the provided continent or region
+                string query = $"SELECT Name, Population FROM country WHERE Continent = '{regionOrCountry}' OR Region = '{regionOrCountry}'";
+                MySqlCommand command = new MySqlCommand(query, connection);
+                MySqlDataReader reader = command.ExecuteReader();
+
+                // Output the population data for each country in the selected region or continent
+                while (reader.Read())
+                {
+                    Console.WriteLine($"{reader["Name"]}: {reader["Population"]} people");
+                }
+            }
+        }
+
+        // Retrieves and displays statistics for language speakers
+        public static void GetLanguageStatistics()
+        {
+            // Create a new database connection
+            using (var connection = DatabaseHelper.GetConnection())
+            {
+                connection.Open(); // Open the connection to the database
+
+                // SQL query to get language statistics for selected languages
+                string query = "SELECT Language, SUM(Population * Percentage / 100) AS Population FROM country " +
+                               "JOIN countrylanguage ON country.Code = countrylanguage.CountryCode " +
+                               "WHERE Language IN ('Chinese', 'English', 'Hindi', 'Spanish', 'Arabic') " +
+                               "GROUP BY Language ORDER BY Population DESC";
+                MySqlCommand command = new MySqlCommand(query, connection);
+                MySqlDataReader reader = command.ExecuteReader();
+
+                // Output the language statistics
+                Console.WriteLine("Language Speaker Statistics:");
+                while (reader.Read())
+                {
+                    string language = reader["Language"].ToString(); // Get the language name
+                    long population = Convert.ToInt64(reader["Population"]); // Get the calculated population
+                    Console.WriteLine($"{language}: {population} people"); // Display the language and its population
+                }
+            }
+        }
+
+        // Generates a report for the top N populated countries
+        public static void GenerateTopNPopulatedCountriesReport()
+        {
+            // Ask the user for the number of top populated countries they want to see
+            Console.WriteLine("Enter the number of top populated countries you want to see:");
+            int N = Convert.ToInt32(Console.ReadLine());
+
+            // Get the top N populated countries
+            List<Country> countries = GetTopNPopulatedCountries(N);
+
+            // Display the results
+            Console.WriteLine("Top N Populated Countries:");
+            foreach (var country in countries)
+            {
+                Console.WriteLine($"{country.Name} ({country.Population} people)"); // Display country name and population
+            }
+        }
+
+        // Generates a report for the top N populated cities
+        public static void GenerateTopNPopulatedCitiesReport()
+        {
+            // Ask the user for the number of top populated cities they want to see
+            Console.WriteLine("Enter the number of top populated cities you want to see:");
+            int N = Convert.ToInt32(Console.ReadLine());
+
+            // Get the top N populated cities
+            List<City> cities = GetTopNPopulatedCities(N);
+
+            // Display the results
+            Console.WriteLine("Top N Populated Cities:");
+            foreach (var city in cities)
+            {
+                Console.WriteLine($"{city.Name} ({city.Population} people) in {city.Country}, District: {city.District}"); // Display city details
+            }
+        }
+    }
+}
