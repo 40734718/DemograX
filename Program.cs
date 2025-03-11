@@ -12,7 +12,7 @@ namespace DemograxExecutable
 
            
             Console.Clear();
-
+            
             
             Console.WriteLine("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
             Console.WriteLine("### Welcome To DemograX ###");
