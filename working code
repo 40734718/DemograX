@@ -1,0 +1,227 @@
+using System;
+using MySql.Data.MySqlClient;
+
+namespace PopulationReportSystem
+{
+    class Program
+    {
+        // Connection string to the MySQL database
+        private static string connectionString = "Server=localhost;Database=world;Uid=root;Pwd=;";
+
+        static void Main(string[] args)
+        {
+            while (true)
+            {
+                ShowMainMenu();
+
+                // Take user input for the action
+                string choice = Console.ReadLine();
+                if (choice == "0")
+                    break;  // Exit the application
+
+                // Validate if the input is a valid action
+                if (int.TryParse(choice, out int action))
+                {
+                    switch (action)
+                    {
+                        case 1:
+                            HandleTopNReports();
+                            break;
+                        case 2:
+                            GenerateAllCitiesReport();
+                            break;
+                        case 3:
+                            GenerateLanguageStatistics();
+                            break;
+                        case 4:
+                            GeneratePopulationBreakdownByContinent();
+                            break;
+                        default:
+                            Console.WriteLine("Invalid choice, please try again.");
+                            break;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Invalid input. Please enter a number corresponding to the menu options.");
+                }
+            }
+        }
+
+        // Display the main menu to the user
+        private static void ShowMainMenu()
+        {
+            Console.Clear();
+            Console.WriteLine("===== Population Report System =====");
+            Console.WriteLine("Select an option:");
+            Console.WriteLine("1. Generate Top N Report (Countries or Cities)");
+            Console.WriteLine("2. Generate All Cities Report Ordered by Population");
+            Console.WriteLine("3. View Language Speaker Statistics (Chinese, English, etc.)");
+            Console.WriteLine("4. View Population Breakdown by Continent");
+            Console.WriteLine("0. Exit");
+            Console.Write("Your choice: ");
+        }
+
+        // Prompt the user for Top N Report details
+        private static void HandleTopNReports()
+        {
+            Console.Clear();
+            Console.WriteLine("===== Top N Report =====");
+            Console.WriteLine("Select the report type:");
+            Console.WriteLine("1. Top N Populated Countries");
+            Console.WriteLine("2. Top N Populated Cities");
+            Console.Write("Your choice: ");
+
+            string choice = Console.ReadLine();
+            if (choice == "1" || choice == "2")
+            {
+                // Ask for the number of results (N)
+                Console.Write("Enter the value of N (number of items to display): ");
+                if (int.TryParse(Console.ReadLine(), out int topN) && topN > 0)
+                {
+                    string type = (choice == "1") ? "countries" : "cities";
+                    GenerateTopNReport(type, topN);
+                }
+                else
+                {
+                    Console.WriteLine("Invalid number, please try again.");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Invalid choice. Returning to main menu.");
+            }
+        }
+
+        // Method to generate the Top N Report for countries or cities
+        public static void GenerateTopNReport(string type, int topN)
+        {
+            string query = type.ToLower() switch
+            {
+                "countries" => "SELECT Name, Population FROM country ORDER BY Population DESC LIMIT @TopN",
+                "cities" => "SELECT c.Name AS CityName, c.Population AS CityPopulation, co.Name AS CountryName " +
+                            "FROM city c JOIN country co ON c.CountryCode = co.Code ORDER BY c.Population DESC LIMIT @TopN",
+                _ => throw new ArgumentException("Invalid type specified")
+            };
+
+            using (var connection = new MySqlConnection(connectionString))
+            {
+                connection.Open();
+                var command = new MySqlCommand(query, connection);
+
+                // Add the parameter for TopN
+                command.Parameters.AddWithValue("@TopN", topN);
+
+                using (var reader = command.ExecuteReader())
+                {
+                    Console.WriteLine($"Top {topN} {type}:");
+                    while (reader.Read())
+                    {
+                        if (type.ToLower() == "countries")
+                        {
+                            Console.WriteLine($"{reader["Name"]}: {reader["Population"]}");
+                        }
+                        else if (type.ToLower() == "cities")
+                        {
+                            Console.WriteLine($"{reader["CityName"]} (Country: {reader["CountryName"]}) - Population: {reader["CityPopulation"]}");
+                        }
+                    }
+                }
+            }
+
+            // Pause to let the user see the result
+            Console.WriteLine("\nPress Enter to return to the main menu...");
+            Console.ReadLine();
+        }
+
+        // Method to generate a report for all cities ordered by population
+        public static void GenerateAllCitiesReport()
+        {
+            string query = @"
+                SELECT c.Name AS CityName, c.Population AS CityPopulation, co.Name AS CountryName
+                FROM city c
+                JOIN country co ON c.CountryCode = co.Code
+                ORDER BY c.Population DESC;
+            ";
+
+            using (var connection = new MySqlConnection(connectionString))
+            {
+                connection.Open();
+                var command = new MySqlCommand(query, connection);
+
+                using (var reader = command.ExecuteReader())
+                {
+                    Console.WriteLine("All cities ordered by population:");
+                    while (reader.Read())
+                    {
+                        Console.WriteLine($"{reader["CityName"]} (Country: {reader["CountryName"]}) - Population: {reader["CityPopulation"]}");
+                    }
+                }
+            }
+
+            // Pause to let the user see the result
+            Console.WriteLine("\nPress Enter to return to the main menu...");
+            Console.ReadLine();
+        }
+
+        // Method to generate language statistics (Chinese, English, etc.)
+        public static void GenerateLanguageStatistics()
+        {
+            string query = @"
+                SELECT cl.Language, SUM(cl.Percentage * (SELECT Population FROM country WHERE Code = cl.CountryCode) / 100) AS Speakers
+                FROM countrylanguage cl
+                WHERE cl.Language IN ('Chinese', 'English', 'Hindi', 'Spanish', 'Arabic')
+                GROUP BY cl.Language
+                ORDER BY Speakers DESC;
+            ";
+
+            using (var connection = new MySqlConnection(connectionString))
+            {
+                connection.Open();
+                var command = new MySqlCommand(query, connection);
+
+                using (var reader = command.ExecuteReader())
+                {
+                    Console.WriteLine("Language Statistics (in order of most speakers):");
+                    while (reader.Read())
+                    {
+                        Console.WriteLine($"{reader["Language"]}: {reader["Speakers"]} people");
+                    }
+                }
+            }
+
+            // Pause to let the user see the result
+            Console.WriteLine("\nPress Enter to return to the main menu...");
+            Console.ReadLine();
+        }
+
+        // Method to generate population breakdown by continent
+        public static void GeneratePopulationBreakdownByContinent()
+        {
+            string query = @"
+                SELECT Continent, SUM(Population) AS TotalPopulation
+                FROM country
+                GROUP BY Continent;
+            ";
+
+            using (var connection = new MySqlConnection(connectionString))
+            {
+                connection.Open();
+                var command = new MySqlCommand(query, connection);
+
+                using (var reader = command.ExecuteReader())
+                {
+                    Console.WriteLine("Population Breakdown by Continent:");
+                    while (reader.Read())
+                    {
+                        Console.WriteLine($"{reader["Continent"]}: {reader["TotalPopulation"]}");
+                    }
+                }
+            }
+
+            // Pause to let the user see the result
+            Console.WriteLine("\nPress Enter to return to the main menu...");
+            Console.ReadLine();
+        }
+    }
+}
